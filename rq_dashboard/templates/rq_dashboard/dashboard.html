@@ -1,5 +1,16 @@
-{% extends "rq_dashboard/base.html" %}
+{% extends "base.html.jinja" %}
 
+{% block meta %}
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="initial-scale=1.0">
+  <title>RQ dashboard</title>
+
+  {# Le styles -#}
+  <link rel="stylesheet" href="{{ url_for('rq_dashboard.static', filename='css/bootstrap.min.css') }}">
+  <link href="{{ url_for('rq_dashboard.static', filename='css/main.css') }}" rel="stylesheet">
+
+{% endblock %}
 
 {% block content %}
 
@@ -163,19 +174,24 @@
         </div>
     </div>
 </div>
-<div class="row">
-    <div class="span12">
-        <div class="section">
-            <p class="intro"><a href="/" id="home-btn" class="btn btn-small" style="float: left"><i class="icon-arrow-left"></i> Home</a></p>
-        </div>
-    </div>
-</div>
 
+{#- JavaScripts are loaded at the end -#}
+
+{#- Custom JS -#}
+<script src="{{ url_for('rq_dashboard.static', filename='js/jquery.min.js') }}" type="text/javascript"></script>
+<script src="{{ url_for('rq_dashboard.static', filename='js/underscore-min.js') }}" type="text/javascript"></script>
+<script src="{{ url_for('rq_dashboard.static', filename='js/sugar-1.2.1.min.js') }}" type="text/javascript"></script>
+<script src="{{ url_for('rq_dashboard.static', filename='js/bootstrap-tooltip.js') }}" type="text/javascript"></script>
+
+<script type="text/javascript">
+var POLL_INTERVAL = {{ poll_interval }};
+{% include "rq_dashboard/dashboard.js" with context %}
+</script>
 
 {% endblock %}
 
 
-{% block inline_js %}
-var POLL_INTERVAL = {{ poll_interval }};
-{% include "rq_dashboard/dashboard.js" with context %}
+
+{% block init_js %}
+
 {% endblock %}
