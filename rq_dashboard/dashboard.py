@@ -11,10 +11,15 @@ from rq import cancel_job, requeue_job
 from rq import get_failed_queue
 from math import ceil
 
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 dashboard = Blueprint('rq_dashboard', __name__,
         template_folder='templates',
         static_folder='static',
+        url_prefix='admin/rq',
         )
 
 
@@ -66,8 +71,8 @@ def jsonify(f):
 
 
 def serialize_queues(queues):
-    return [dict(name=q.name, count=q.count, url=url_for('.overview',
-        queue_name=q.name)) for q in queues]
+    return [dict(name=q.name, count=q.count, delayed=q.delayed,
+                 url=url_for('.overview', queue_name=q.name)) for q in queues]
 
 
 def serialize_date(dt):
@@ -168,8 +173,21 @@ def compact_queue(queue_name):
 @dashboard.route('/queues.json')
 @jsonify
 def list_queues():
-    queues = serialize_queues(sorted(Queue.all()))
-    return dict(queues=queues)
+    queues = dict([(q.key, q) for q in Queue.all()])
+
+    # inject delayed job count
+    [setattr(q, 'delayed', 0) for q in queues.values()]
+
+    # hack to get a redis handle
+    connection = Queue().connection
+    # TODO: fix hard-coded delay key
+    delay_key = 'rq:delayed'
+
+    for pickled_job in connection.zrange(delay_key, 0, -1):
+        delayed_job = pickle.loads(pickled_job)
+        queues[delayed_job['queue_key']].delayed += 1
+
+    return dict(queues=serialize_queues(sorted(queues.values())))
 
 
 @dashboard.route('/jobs/<queue_name>/<page>.json')
