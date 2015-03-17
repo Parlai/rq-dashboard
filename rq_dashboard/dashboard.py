@@ -35,7 +35,10 @@ def authentication_hook():
 
 @dashboard.before_app_first_request
 def setup_rq_connection():
-    if current_app.config.get('REDIS_URL'):
+    redis_url = current_app.extensions['rq-dashboard'].redis_url
+    if redis_url:
+        current_app.redis_conn = from_url(redis_url)
+    elif current_app.config.get('REDIS_URL'):
         current_app.redis_conn = from_url(current_app.config.get('REDIS_URL'))
     else:
         current_app.redis_conn = Redis(host=current_app.config.get('REDIS_HOST', 'localhost'),
